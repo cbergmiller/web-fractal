@@ -1,0 +1,41 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta property="og:title" content="">
+    <meta property="og:type" content="">
+    <meta property="og:url" content="">
+    <meta property="og:image" content="">
+    <link rel="stylesheet" href="main.css">
+    <meta name="theme-color" content="#fafafa">
+    <script src="https://cdn.jsdelivr.net/npm/d3-color@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-interpolate@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-scale@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-scale-chromatic@3"></script>
+</head>
+
+<body>
+<div class="layout">
+    <div id="fractal">
+        <canvas id="canvas"></canvas>
+        <svg viewBox="0 0 1 1" xmlns="http://www.w3.org/2000/svg" id="overlay">
+            <rect x="0" y="0" width="100" height="100" fill="none" stroke="none" stroke-width="2px" id="zoom-box"/>
+        </svg>
+    </div>
+    <div id="info">
+        Center Real: <span>-</span><br/>
+        Center Imag.: <span>-</span><br/>
+        Diameter Real: <span>-</span><br/>
+        Magnification: <span>-</span><br/>
+    </div>
+</div>
+
+<script src="fractal.ts"></script>
+</body>
+
+</html>
