@@ -33,7 +33,3 @@
         {value}
     {/if}
 </label>
-
-<style>
-    /* styles go here */
-</style>

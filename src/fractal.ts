@@ -26,7 +26,7 @@ export function drawFractal(options: FractalOptions): Promise<boolean> {
     const reMax = coords.centerRe + coords.dRe / 2;
     const imMin = coords.centerIm - dIm / 2;
     const imMax = coords.centerIm + dIm / 2;
-    console.log(coords, reMin, reMax, imMin, imMax)
+
     const maxColorIter = Math.ceil(maxIter / colorWrap);
     return new Promise(resolve => {
         // https://github.com/d3/d3-scale-chromatic
@@ -99,15 +99,23 @@ export function pixelToComplex(x, y, xPixels, yPixels, coords: Coodinates) {
 // document.getElementById('canvas')
 
 /*
-Center Real: -0.7393578357781522
-Center Imag.: -0.2421984546433715
-Diameter Real: 7.313879275202695e-9
+-0.7393578357781522
+-0.2421984546433715i
+7.313879275202695e-9
 Magnification: 420693298.8943446
 
 Center Real: 0.3360434967259972
 Center Imag.: -0.04860233603110305
 Diameter Real: 2.285023468797168e-9
 
-Real 0.001643721971153
-Imag 0.822467633298876i
+0.001643721971153
+0.822467633298876i
+
+0.001643721972148683
+0.8224676332989973
+2.164940800000001e-11
+
+-0.2429584385991947
+0.724807885291176i
+0.00006551467440149465
  */

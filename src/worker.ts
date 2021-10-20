@@ -6,8 +6,11 @@ function julia(x: number, y: number, maxIter: number): number {
     let yy = y * y;
     let xy = x * y;
     let value2 = xx + yy;
+    let xOld = 0;
+    let yOld = 0;
+    let period = 0;
 
-    while ((value2 <= 4) && (remainIter > 0)) {
+    while (value2 <= 4 && remainIter > 0) {
         remainIter = remainIter - 1;
         x = xx - yy + xAdd;
         y = xy + xy + yAdd;
@@ -15,6 +18,17 @@ function julia(x: number, y: number, maxIter: number): number {
         yy = y * y;
         xy = x * y;
         value2 = xx + yy;
+        if (xOld === x && yOld === y) {
+            // We are inside the Mandelbrot set, leave the while loop
+            console.log(x, y);
+            return 1;
+        }
+        period += 1;
+        if (period > 20) {
+            period = 0;
+            xOld = x;
+            yOld = y;
+        }
     }
     return maxIter - remainIter;
 }

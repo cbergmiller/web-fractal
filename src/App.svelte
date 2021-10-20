@@ -1,6 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
     import NumberInput from './Number-input.svelte';
+    import CoordInput from './Coord-input.svelte';
     import {drawFractal, pixelToComplex} from './fractal';
 
     let w = 1;
@@ -50,12 +51,14 @@
             colorWrap,
             workerCount,
             plotLines,
-        }).then(() => {
-            isBusy = false;
-        }).catch(e => {
-            console.error(e);
-            isBusy = false;
-        });
+        })
+            .then(() => {
+                isBusy = false;
+            })
+            .catch(e => {
+                console.error(e);
+                isBusy = false;
+            });
     }
 
     onMount(() => {
@@ -121,7 +124,7 @@
                     centerRe: pixelToComplex(zoomCenterX, zoomCenterY, w, h, coords)[0],
                     centerIm: pixelToComplex(zoomCenterX, zoomCenterY, w, h, coords)[1],
                     dRe: coords.dRe * zoom,
-                }
+                };
                 showZoom = false;
                 renderFractal();
                 break;
@@ -149,15 +152,13 @@
             </svg>
         </div>
         <div id="info">
-            Center Real: {coords.centerRe}<br />
-            Center Imag.: {coords.centerIm}<br />
-            Diameter Real: {coords.dRe}<br />
+            <CoordInput bind:value={coords} />
             <br />
             Magnification: {3.0769 / coords.dRe}<br />
             <br />
             Width: {w}<br />
             Height: {h}<br />
-            <br />{maxIter}
+            <br />
             <NumberInput label="Max. Iterations:" bind:value={maxIter} min="30" max="999999" />
             <br />
             <NumberInput label="Web Workers:" bind:value={workerCount} min="1" max="8" />
