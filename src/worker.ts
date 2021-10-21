@@ -20,8 +20,7 @@ function julia(x: number, y: number, maxIter: number): number {
         value2 = xx + yy;
         if (xOld === x && yOld === y) {
             // We are inside the Mandelbrot set, leave the while loop
-            console.log(x, y);
-            return 1;
+            return maxIter;
         }
         period += 1;
         if (period > 20) {
