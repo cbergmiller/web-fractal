@@ -1,9 +1,11 @@
 <script lang="ts">
     import {onMount} from 'svelte';
     import NumberInput from './Number-input.svelte';
-    import CoordInput from './Coord-input.svelte';
+    import CoordInput from './Coords-input.svelte';
     import ColorSchemeInput from './Color-scheme-input.svelte';
-    import {ColorOptions, Coodinates, drawFractal, pixelToComplex} from './fractal';
+    import {ColorOptions, drawFractal, pixelToComplex} from './fractal';
+    import CoordsHistory from './Coords-history.svelte';
+    import type {Coordinates, CoordsHistoryItem} from './models';
 
     let w = 1;
     let h = 1;
@@ -12,12 +14,12 @@
     let canvasW;
     let canvasH;
     // Init plane
-    let coords: Coodinates = {
+    let coords: Coordinates = {
         centerRe: -0.7,
         centerIm: 0,
         dRe: 3.0769,
     };
-    let coordsHistory = [];
+    let coordsHistory: CoordsHistoryItem[] = [];
     let maxIter = 150;
     let colorOptions: ColorOptions = {
         scheme: 'turbo',
@@ -64,11 +66,11 @@
 
     onMount(() => {
         const dpr = window.devicePixelRatio || 1;
-        console.log(dpr, canvas.width, canvas.height, canvasW, canvasH);
         canvas.width = canvasW * dpr;
         canvas.height = canvasH * dpr;
-        w = canvasW * dpr;
-        h = canvasH * dpr;
+        w = Math.floor(canvasW * dpr);
+        h = Math.floor(canvasH * dpr);
+        // console.log(dpr, canvas.width, canvas.height, canvasW, canvasH);
         ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, w, h);
         renderFractal();
@@ -90,6 +92,11 @@
                 zoom: 0.5,
             };
         }
+    }
+
+    function pushNewCoordinates(c: Coordinates) {
+        coordsHistory = [...coordsHistory, {coords, date: new Date()}];
+        coords = c;
     }
 
     function handleKeyDown(e) {
@@ -126,11 +133,11 @@
                 case ' ':
                 case 'Enter':
                     if (isBusy) return;
-                    coords = {
+                    pushNewCoordinates({
                         centerRe: zoomCoords[0],
                         centerIm: zoomCoords[1],
                         dRe: coords.dRe * zoomBox.zoom,
-                    };
+                    });
                     renderFractal();
                     break;
                 case 'Escape':
@@ -161,28 +168,34 @@
             {/if}
         </div>
         <div id="info">
-            <CoordInput bind:value={coords} />
+            <CoordInput value={coords} onChange={pushNewCoordinates} />
             <br />
-            Magnification: {3.0769 / coords.dRe}<br />
+            <div class="value-container">
+                <div>Magnification:</div>
+                <div>{3.0769 / coords.dRe}</div>
+            </div>
             <br />
-            Width: {w}<br />
-            Height: {h}<br />
+            <div class="value-container">
+                <div>Width:</div>
+                <div>{w}</div>
+            </div>
+            <div class="value-container">
+                <div>Height:</div>
+                <div>{h}</div>
+            </div>
             <br />
             <NumberInput label="Max. Iterations:" bind:value={maxIter} min="30" max="999999" />
-            <br />
             <NumberInput label="Web Workers:" bind:value={workerCount} min="1" max="8" />
-            <br />
             <ColorSchemeInput bind:value={colorOptions.scheme} />
-            <br />
             <NumberInput label="Color Cycles:" bind:value={colorOptions.cycles} min="1" max="100" />
-            <br />
             <div
-                class="cursor-default"
+                class="value-container"
                 on:click={() => {
                     colorOptions = {...colorOptions, reversed: !colorOptions.reversed};
                 }}
             >
-                Reversed Colors: {colorOptions.reversed ? 'yes' : 'no'}
+                <div>Reversed Colors:</div>
+                <div>{colorOptions.reversed ? 'yes' : 'no'}</div>
             </div>
             <button on:click={renderFractal} disabled={isBusy}>{isBusy ? 'Working..' : 'Redraw'}</button>
             <br />
@@ -196,6 +209,8 @@
             {:else}
                 <p>Press "z" to activate zoom mode.</p>
             {/if}
+            Coordinates History
+            <CoordsHistory items={coordsHistory} />
         </div>
     </div>
 </main>

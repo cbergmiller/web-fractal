@@ -42,3 +42,13 @@ body {
 .cursor-default {
     cursor: default;
 }
+
+.value-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 10px;
+}
+.value-container > div {
+    grid-column: auto;
+    grid-row: 1;
+}

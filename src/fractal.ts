@@ -2,6 +2,7 @@ import {color} from 'd3-color';
 import {scaleSequential} from 'd3-scale';
 import * as scales from 'd3-scale-chromatic';
 import WebWorker from 'web-worker:./worker.ts';
+import type {Coordinates} from './models';
 
 // See: https://github.com/d3/d3-scale-chromatic
 export const colorSchemes = {
@@ -14,12 +15,6 @@ export const colorSchemes = {
     cubehelix: scales.interpolateCubehelixDefault,
 };
 
-export interface Coodinates {
-    centerRe: number;
-    centerIm: number;
-    dRe: number;
-}
-
 export interface ColorOptions {
     scheme: string;
     cycles: number;
@@ -27,7 +22,7 @@ export interface ColorOptions {
 }
 
 interface FractalOptions {
-    coords: Coodinates;
+    coords: Coordinates;
     xPixels: number;
     yPixels: number;
     maxIter: number;
@@ -56,13 +51,14 @@ export function drawFractal(options: FractalOptions): Promise<boolean> {
         }
         colorMap.push(color('rgba(0, 0, 0, 255)'));
 
-        const linesPerBatch = 10;
+        const linesPerBatch = 20;
         let nResults = Math.ceil(yPixels / linesPerBatch);
 
         function handleResult(e) {
             // Plot one row
             const {y, rows} = e.data;
             const data = [];
+            console.log('result', rows.length, rows[0].length)
             for (let i = 0; i < rows.length; i++) {
                 for (let x = 0; x < rows[i].length; x++) {
                     const n = rows[i][x];
@@ -94,6 +90,7 @@ export function drawFractal(options: FractalOptions): Promise<boolean> {
                 imMin,
                 imMax,
                 maxIter,
+                count: linesPerBatch,
             });
         }
     });
@@ -102,7 +99,7 @@ export function drawFractal(options: FractalOptions): Promise<boolean> {
 /**
  * Transform pixels to complex coordinates
  */
-export function pixelToComplex(x, y, xPixels, yPixels, coords: Coodinates) {
+export function pixelToComplex(x, y, xPixels, yPixels, coords: Coordinates) {
     const dIm = (coords.dRe * yPixels) / xPixels;
     const reMin = coords.centerRe - coords.dRe / 2;
     const reMax = coords.centerRe + coords.dRe / 2;
@@ -143,4 +140,8 @@ Diameter Real: 2.285023468797168e-9
 -0.7726490442538153
 -0.12520022256064256
 0.0006380259839999961
+
+-1.747348601567935
+-0.0014944961940103077
+1.5040283146776475e-8
  */

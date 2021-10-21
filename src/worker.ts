@@ -33,9 +33,9 @@ function julia(x: number, y: number, maxIter: number): number {
 }
 
 self.addEventListener('message', function (e) {
-    const {y, xPixels, yPixels, reMin, reMax, imMin, imMax, maxIter} = e.data;
+    const {y, xPixels, yPixels, reMin, reMax, imMin, imMax, maxIter, count} = e.data;
     const rows = [];
-    for (let y2 = y; y2 < Math.min(y + 10, yPixels); y2++) {
+    for (let y2 = y; y2 < Math.min(y + count, yPixels); y2++) {
         const line = [];
         const cIm = imMin + ((imMax - imMin) * y2) / yPixels;
         for (let x = 0; x < xPixels; x++) {

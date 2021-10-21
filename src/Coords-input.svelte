@@ -1,5 +1,6 @@
-<script>
+<script lang="ts">
     export let value = undefined;
+    export let onChange = undefined;
     let isForm = false;
     let formValue = '';
 
@@ -7,11 +8,11 @@
         isForm = false;
         const lines = formValue.split(/\r?\n/);
         if (lines.length >= 3) {
-            value = {
+            onChange({
                 centerRe: parseFloat(lines[0]),
                 centerIm: parseFloat(lines[1].replace('i', '')),
                 dRe: parseFloat(lines[2]),
-            };
+            });
         } else {
             console.log(lines);
         }
@@ -20,10 +21,12 @@
 
 <div
     on:click={() => {
-        formValue = `${value.centerRe}\n${value.centerIm}\n${value.dRe}`;
-        isForm = true;
+        if (!isForm) {
+            formValue = `${value.centerRe}\n${value.centerIm}\n${value.dRe}`;
+            isForm = true;
+        }
     }}
-    class="container"
+    class="value-container"
 >
     <div>
         Center Real:<br />
@@ -42,15 +45,6 @@
 </div>
 
 <style>
-    .container {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 10px;
-    }
-    .container > div {
-        grid-column: auto;
-        grid-row: 1;
-    }
     textarea {
         resize: none;
         height: 100%;

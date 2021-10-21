@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     export let label = '';
     export let value = 0;
     export let min = undefined;
@@ -7,6 +7,7 @@
     let formValue = 0;
 
     function handleChange() {
+        console.log('blur')
         isForm = false;
         if (!isNaN(formValue) && formValue !== null) {
             value = formValue;
@@ -14,22 +15,22 @@
     }
 </script>
 
-<label
+<div
+    class="value-container"
     on:click={() => {
-        formValue = value;
-        isForm = true;
+        console.log(isForm)
+        if (!isForm) {
+            formValue = value;
+            isForm = true;
+        }
     }}
 >
-    {label}
-    {#if isForm}
-        <input
-            type="number"
-            min={min}
-            max={max}
-            bind:value={formValue}
-            on:blur={handleChange}
-        />
-    {:else}
-        {value}
-    {/if}
-</label>
+    <div>{label}</div>
+    <div>
+        {#if isForm}
+            <input type="number" {min} {max} bind:value={formValue} on:blur={handleChange} />
+        {:else}
+            {value}
+        {/if}
+    </div>
+</div>
