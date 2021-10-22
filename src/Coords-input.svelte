@@ -1,6 +1,5 @@
 <script lang="ts">
     export let value = undefined;
-    export let onChange = undefined;
     let isForm = false;
     let formValue = '';
 
@@ -8,11 +7,11 @@
         isForm = false;
         const lines = formValue.split(/\r?\n/);
         if (lines.length >= 3) {
-            onChange({
+            value = {
                 centerRe: parseFloat(lines[0]),
                 centerIm: parseFloat(lines[1].replace('i', '')),
                 dRe: parseFloat(lines[2]),
-            });
+            };
         } else {
             console.log(lines);
         }
@@ -29,9 +28,9 @@
     class="value-container"
 >
     <div>
-        Center Real:<br />
-        Center Imag:<br />
-        Diameter Real:
+        Center Real<br />
+        Center Imag<br />
+        Diameter Real
     </div>
     <div>
         {#if !isForm}

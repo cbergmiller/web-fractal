@@ -1,5 +1,11 @@
 body {
+    color: gray;
+    font-family: monospace;
     background-color: black;
+}
+
+a {
+    color: gray;
 }
 
 .layout {
@@ -29,7 +35,6 @@ body {
 
 #info {
     color: lightgray;
-    font-family: monospace;
     grid-column: 2;
     grid-row: 1;
 }
@@ -51,4 +56,10 @@ body {
 .value-container > div {
     grid-column: auto;
     grid-row: 1;
+}
+
+.footer {
+    text-align: center;
+    grid-column-start: 1;
+    grid-column-end: 3;
 }

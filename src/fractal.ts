@@ -58,7 +58,6 @@ export function drawFractal(options: FractalOptions): Promise<boolean> {
             // Plot one row
             const {y, rows} = e.data;
             const data = [];
-            console.log('result', rows.length, rows[0].length)
             for (let i = 0; i < rows.length; i++) {
                 for (let x = 0; x < rows[i].length; x++) {
                     const n = rows[i][x];
@@ -144,4 +143,9 @@ Diameter Real: 2.285023468797168e-9
 -1.747348601567935
 -0.0014944961940103077
 1.5040283146776475e-8
+
+-1.4098452847968386
+-0.1295803092471446
+1.7031488632999768e-12
+
  */

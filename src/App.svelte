@@ -45,6 +45,14 @@
     }
 
     function renderFractal() {
+        if (
+            !coordsHistory.length ||
+            coordsHistory[0].coords.centerRe !== coords.centerRe ||
+            coordsHistory[0].coords.centerIm !== coords.centerIm ||
+            coordsHistory[0].coords.dRe !== coords.dRe
+        ) {
+            coordsHistory = [...coordsHistory, {coords, date: new Date()}];
+        }
         isBusy = true;
         drawFractal({
             coords,
@@ -78,8 +86,6 @@
 
     // ToDo: canvas size options (aspect ratio with native resolution, 1920*1080, ...)
     // ToDo: save/load settings
-    // ToDo: history of coordinates/settings
-    // ToDo: align all values with grid
     // ToDo: orbital mode (follow pointer an draw orbit)
     // ToDo: Distance estimation method
     // ToDo: Julia
@@ -92,11 +98,6 @@
                 zoom: 0.5,
             };
         }
-    }
-
-    function pushNewCoordinates(c: Coordinates) {
-        coordsHistory = [...coordsHistory, {coords, date: new Date()}];
-        coords = c;
     }
 
     function handleKeyDown(e) {
@@ -133,11 +134,11 @@
                 case ' ':
                 case 'Enter':
                     if (isBusy) return;
-                    pushNewCoordinates({
+                    coords = {
                         centerRe: zoomCoords[0],
                         centerIm: zoomCoords[1],
                         dRe: coords.dRe * zoomBox.zoom,
-                    });
+                    };
                     renderFractal();
                     break;
                 case 'Escape':
@@ -154,6 +155,16 @@
             <canvas bind:this={canvas} bind:clientWidth={canvasW} bind:clientHeight={canvasH} />
             {#if zoomBox}
                 <svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" id="overlay">
+                    <path
+                        d="M0,0 h{w} v{h} h{-w} v{-h} z M{zoomBox.centerX - (w * zoomBox.zoom) / 2},{zoomBox.centerY -
+                            (h * zoomBox.zoom) / 2} h{w * zoomBox.zoom} v{h * zoomBox.zoom} h{-(
+                            w * zoomBox.zoom
+                        )} v{-h * zoomBox.zoom} z"
+                        fill="black"
+                        fill-rule="evenodd"
+                        opacity="0.5"
+                        stroke="none"
+                    />
                     <rect
                         x={zoomBox.centerX - (w * zoomBox.zoom) / 2}
                         y={zoomBox.centerY - (h * zoomBox.zoom) / 2}
@@ -168,49 +179,59 @@
             {/if}
         </div>
         <div id="info">
-            <CoordInput value={coords} onChange={pushNewCoordinates} />
+            <CoordInput bind:value={coords} />
             <br />
             <div class="value-container">
-                <div>Magnification:</div>
+                <div>Magnification</div>
                 <div>{3.0769 / coords.dRe}</div>
             </div>
             <br />
             <div class="value-container">
-                <div>Width:</div>
+                <div>Width</div>
                 <div>{w}</div>
             </div>
             <div class="value-container">
-                <div>Height:</div>
+                <div>Height</div>
                 <div>{h}</div>
             </div>
             <br />
-            <NumberInput label="Max. Iterations:" bind:value={maxIter} min="30" max="999999" />
-            <NumberInput label="Web Workers:" bind:value={workerCount} min="1" max="8" />
+            <NumberInput label="Max. Iterations" bind:value={maxIter} min="30" max="999999" />
+            <NumberInput label="Web Workers" bind:value={workerCount} min="1" max="8" />
             <ColorSchemeInput bind:value={colorOptions.scheme} />
-            <NumberInput label="Color Cycles:" bind:value={colorOptions.cycles} min="1" max="100" />
+            <NumberInput label="Color Cycles" bind:value={colorOptions.cycles} min="1" max="100" />
             <div
                 class="value-container"
                 on:click={() => {
                     colorOptions = {...colorOptions, reversed: !colorOptions.reversed};
                 }}
             >
-                <div>Reversed Colors:</div>
+                <div>Reversed Colors</div>
                 <div>{colorOptions.reversed ? 'yes' : 'no'}</div>
             </div>
             <button on:click={renderFractal} disabled={isBusy}>{isBusy ? 'Working..' : 'Redraw'}</button>
             <br />
             {#if zoomBox}
                 <br />
-                Zoom: {zoomBox.zoom}<br />
-                Center Real: {zoomCoords[0]}<br />
-                Center Imag: {zoomCoords[1]}i<br />
-                Diameter Real: {coords.dRe * zoomBox.zoom}<br />
-                <p>Press SPACE or ENTER to redraw with zoom. Press "z" or "ESC" to end zoom mode.</p>
+                Zoom {zoomBox.zoom}<br />
+                Center Real {zoomCoords[0]}<br />
+                Center Imag {zoomCoords[1]}i<br />
+                Diameter Real {coords.dRe * zoomBox.zoom}<br />
+                <p>Press SPACE or ENTER to redraw with zoom, + or - to change box size, "z" or "ESC" to end zoom mode.</p>
             {:else}
                 <p>Press "z" to activate zoom mode.</p>
             {/if}
             Coordinates History
-            <CoordsHistory items={coordsHistory} />
+            <CoordsHistory
+                items={coordsHistory}
+                onSelect={newCoords => {
+                    coords = newCoords;
+                    renderFractal();
+                }}
+            />
+        </div>
+        <div class="footer">
+            Christian Bergmiller 2021
+            <a href="https://github.com/cbergmiller/web-fractal">https://github.com/cbergmiller/web-fractal</a>
         </div>
     </div>
 </main>

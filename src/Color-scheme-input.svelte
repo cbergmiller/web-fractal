@@ -18,7 +18,7 @@
         isForm = true;
     }}
 >
-    <div>Color Scheme:</div>
+    <div>Color Scheme</div>
     <div>
         {#if isForm}
             <select
