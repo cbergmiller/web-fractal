@@ -21,7 +21,13 @@ export interface ColorOptions {
     reversed: boolean;
 }
 
+export enum FractalType {
+    Mandelbrot,
+    Julia,
+}
+
 interface FractalOptions {
+    type: FractalType;
     coords: Coordinates;
     xPixels: number;
     yPixels: number;
@@ -29,6 +35,22 @@ interface FractalOptions {
     colorOptions: ColorOptions;
     workerCount: number;
     plotLines: (yStart: number, data: number[]) => void;
+}
+
+const workers: Worker[] = [];
+
+function initWorkers(count: number, handleResult: (e: MessageEvent) => void) {
+    // Create workers
+    const n = count - workers.length;
+    if (n) {
+        for (let i = 0; i < n; i++) {
+            workers.push(new WebWorker());
+        }
+    }
+    // Update result callback function
+    for (let i = 0; i < count; i++) {
+        workers[i].onmessage = handleResult;
+    }
 }
 
 export function drawFractal(options: FractalOptions): Promise<boolean> {
@@ -54,7 +76,7 @@ export function drawFractal(options: FractalOptions): Promise<boolean> {
         const linesPerBatch = 20;
         let nResults = Math.ceil(yPixels / linesPerBatch);
 
-        function handleResult(e) {
+        initWorkers(workerCount, function (e) {
             // Plot one row
             const {y, rows} = e.data;
             const data = [];
@@ -70,14 +92,7 @@ export function drawFractal(options: FractalOptions): Promise<boolean> {
             if (!nResults) {
                 resolve(true);
             }
-        }
-
-        const workers = [];
-        for (let i = 0; i < workerCount; i++) {
-            const worker = new WebWorker();
-            worker.onmessage = handleResult;
-            workers.push(worker);
-        }
+        });
 
         for (let y = 0; y < yPixels; y += linesPerBatch) {
             workers[(y / linesPerBatch) % workerCount].postMessage({
@@ -109,9 +124,25 @@ export function pixelToComplex(x, y, xPixels, yPixels, coords: Coordinates) {
     return [real, imag];
 }
 
-// document.getElementById('canvas')
+interface FractalOrbitOptions {
+    type: FractalType;
+    coords: Coordinates;
+    xPixels: number;
+    yPixels: number;
+    maxIter: number;
+    plotLines: (yStart: number, data: number[]) => void;
+}
+
+export function drawOrbit(options: FractalOrbitOptions) {
+    initWorkers(1, function (e) {
+        console.log(e.data);
+    });
+    workers[0].postMessage({})
+}
 
 /*
+Points of interest
+
 -0.7393578357781522
 -0.2421984546433715i
 7.313879275202695e-9

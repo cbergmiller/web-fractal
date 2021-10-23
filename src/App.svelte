@@ -3,7 +3,7 @@
     import NumberInput from './Number-input.svelte';
     import CoordInput from './Coords-input.svelte';
     import ColorSchemeInput from './Color-scheme-input.svelte';
-    import {ColorOptions, drawFractal, pixelToComplex} from './fractal';
+    import {ColorOptions, drawFractal, drawOrbit, FractalType, pixelToComplex} from './fractal';
     import CoordsHistory from './Coords-history.svelte';
     import type {Coordinates, CoordsHistoryItem} from './models';
 
@@ -55,6 +55,7 @@
         }
         isBusy = true;
         drawFractal({
+            type: FractalType.Mandelbrot,
             coords,
             xPixels: w,
             yPixels: h,
@@ -100,6 +101,9 @@
         }
     }
 
+    const zoomMax = 1;
+    const zoomMin = 0.04;
+
     function handleKeyDown(e) {
         // console.log(e.key)
         if (e.key === 'z') {
@@ -126,10 +130,10 @@
                     zoomBox = {...zoomBox, centerX: zoomBox.centerX + 10};
                     break;
                 case '-':
-                    zoomBox = {...zoomBox, zoom: zoomBox.zoom - 0.02};
+                    zoomBox = {...zoomBox, zoom: Math.max(zoomBox.zoom - 0.02, zoomMin)};
                     break;
                 case '+':
-                    zoomBox = {...zoomBox, zoom: zoomBox.zoom + 0.02};
+                    zoomBox = {...zoomBox, zoom: Math.min(zoomBox.zoom + 0.02, zoomMax)};
                     break;
                 case ' ':
                 case 'Enter':
@@ -147,6 +151,18 @@
             }
         }
     }
+
+    function handleZoomMouseMove(e: MouseEvent) {
+        //const mouseCoords = pixelToComplex(e.offsetX, e.offsetY, canvasW, canvasH, coords);
+        // console.log(coords.centerRe, coords.centerIm, mouseCoords);
+        // drawOrbit({});
+        zoomBox = {...zoomBox, centerX: (e.offsetX * w) / canvasW, centerY: (e.offsetY * h) / canvasH};
+    }
+
+    function handleZoomWheel(e: WheelEvent) {
+        zoomBox = {...zoomBox, zoom: Math.min(Math.max(zoomBox.zoom + e.deltaY * -0.001, zoomMin), zoomMax)};
+        e.preventDefault();
+    }
 </script>
 
 <main>
@@ -154,7 +170,13 @@
         <div id="fractal">
             <canvas bind:this={canvas} bind:clientWidth={canvasW} bind:clientHeight={canvasH} />
             {#if zoomBox}
-                <svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" id="overlay">
+                <svg
+                    viewBox="0 0 {w} {h}"
+                    xmlns="http://www.w3.org/2000/svg"
+                    id="overlay"
+                    on:mousemove={handleZoomMouseMove}
+                    on:wheel={handleZoomWheel}
+                >
                     <path
                         d="M0,0 h{w} v{h} h{-w} v{-h} z M{zoomBox.centerX - (w * zoomBox.zoom) / 2},{zoomBox.centerY -
                             (h * zoomBox.zoom) / 2} h{w * zoomBox.zoom} v{h * zoomBox.zoom} h{-(
@@ -216,7 +238,9 @@
                 Center Real {zoomCoords[0]}<br />
                 Center Imag {zoomCoords[1]}i<br />
                 Diameter Real {coords.dRe * zoomBox.zoom}<br />
-                <p>Press SPACE or ENTER to redraw with zoom, + or - to change box size, "z" or "ESC" to end zoom mode.</p>
+                <p>
+                    Press SPACE or ENTER to redraw with zoom, + or - to change box size, "z" or "ESC" to end zoom mode.
+                </p>
             {:else}
                 <p>Press "z" to activate zoom mode.</p>
             {/if}
