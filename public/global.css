@@ -25,12 +25,14 @@ a {
     aspect-ratio: 16/10;
 }
 
-#overlay {
+.overlay {
     position: absolute;
     top: 0;
     left: 0;
-    /*width: 1024px;
-    height: 768px;*/
+}
+
+.opacity05 {
+    opacity: 0.5;
 }
 
 #info {

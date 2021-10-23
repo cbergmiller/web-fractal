@@ -5,8 +5,10 @@
  * @param xAdd
  * @param yAdd
  * @param maxIter
+ * @param orbitArr
  */
-function julia(x: number, y: number, xAdd: number, yAdd: number, maxIter: number): number {
+function julia(x: number, y: number, xAdd: number, yAdd: number, maxIter: number, orbitArr?: number[]): number {
+    const isOrbital = !!orbitArr;
     let remainIter = maxIter;
     let xx = x * x;
     let yy = y * y;
@@ -34,22 +36,37 @@ function julia(x: number, y: number, xAdd: number, yAdd: number, maxIter: number
             xOld = x;
             yOld = y;
         }
+        if (isOrbital) {
+            orbitArr.push(x, y);
+        }
     }
     return maxIter - remainIter;
 }
 
 self.addEventListener('message', function (e) {
-    const {y, xPixels, yPixels, reMin, reMax, imMin, imMax, maxIter, count, juliaCoords} = e.data;
-    const rows = [];
-    for (let y2 = y; y2 < Math.min(y + count, yPixels); y2++) {
-        const line = [];
-        const cIm = imMin + ((imMax - imMin) * y2) / yPixels;
-        for (let x = 0; x < xPixels; x++) {
-            const cRe = reMin + ((reMax - reMin) * x) / xPixels;
-            const iterations = julia(cRe, cIm, juliaCoords?.centerRe ?? cRe, juliaCoords?.centerIm ?? cIm, maxIter);
-            line.push(iterations);
+    if (e.data.isOrbital) {
+        const {xPixels, yPixels, coords, maxIter} = e.data;
+        const arr = [];
+        julia(coords.centerRe, coords.centerIm, coords.centerRe, coords.centerIm, maxIter, arr);
+        // Convert orbit points to pixel plane
+        for (let i = 0; i < arr.length; i += 2) {
+            arr[i] = xPixels * (arr[i] + 2.5) * .25;
+            arr[i + 1] = yPixels * (arr[i + 1] + 1.25) * .4;
         }
-        rows.push(line);
+        postMessage(arr);
+    } else {
+        const {y, xPixels, yPixels, reMin, reMax, imMin, imMax, maxIter, count, juliaCoords} = e.data;
+        const rows = [];
+        for (let y2 = y; y2 < Math.min(y + count, yPixels); y2++) {
+            const line = [];
+            const cIm = imMin + ((imMax - imMin) * y2) / yPixels;
+            for (let x = 0; x < xPixels; x++) {
+                const cRe = reMin + ((reMax - reMin) * x) / xPixels;
+                const iterations = julia(cRe, cIm, juliaCoords?.centerRe ?? cRe, juliaCoords?.centerIm ?? cIm, maxIter);
+                line.push(iterations);
+            }
+            rows.push(line);
+        }
+        postMessage({y, rows});
     }
-    postMessage({y, rows});
 });

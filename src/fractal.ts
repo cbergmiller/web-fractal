@@ -130,14 +130,21 @@ interface FractalOrbitOptions {
     xPixels: number;
     yPixels: number;
     maxIter: number;
-    plotLines: (yStart: number, data: number[]) => void;
+    plotDots: (data: number[]) => void;
 }
 
 export function drawOrbit(options: FractalOrbitOptions) {
+    const {coords, xPixels, yPixels, maxIter, plotDots} = options;
     initWorkers(1, function (e) {
-        console.log(e.data);
+        plotDots(e.data);
     });
-    workers[0].postMessage({})
+    workers[0].postMessage({
+        isOrbital: true,
+        xPixels,
+        yPixels,
+        coords,
+        maxIter,
+    })
 }
 
 /*
