@@ -2,10 +2,10 @@
     import {onMount} from 'svelte';
     import NumberInput from './Number-input.svelte';
     import CoordInput from './Coords-input.svelte';
-    import ColorSchemeInput from './Color-scheme-input.svelte';
-    import {ColorOptions, drawFractal, drawOrbit, FractalType, pixelToComplex} from './fractal';
+    import Select from './Select.svelte';
     import CoordsHistory from './Coords-history.svelte';
-    import type {Coordinates, CoordsHistoryItem} from './models';
+    import {ColorOptions, FractalType, Coordinates, CoordsHistoryItem} from './models';
+    import {colorSchemes, drawFractal, drawOrbit, fractalTypeOptions, pixelToComplex} from './fractal';
 
     let w = 1;
     let h = 1;
@@ -16,6 +16,7 @@
     let canvasW;
     let canvasH;
     let isOrbitalCanvasInitialized = false;
+    let type = FractalType.Mandelbrot;
     // Init plane
     let coords: Coordinates = {
         centerRe: -0.7,
@@ -25,9 +26,10 @@
     let coordsHistory: CoordsHistoryItem[] = [];
     let maxIter = 150;
     let colorOptions: ColorOptions = {
-        scheme: 'turbo',
-        cycles: 4,
+        scheme: 'cividis',
+        cycles: 1,
         reversed: false,
+        distLimit: 0.002,
     };
     let isBusy = false;
     let workerCount = 4;
@@ -51,15 +53,15 @@
     function renderFractal() {
         if (
             !coordsHistory.length ||
-            coordsHistory[0].coords.centerRe !== coords.centerRe ||
-            coordsHistory[0].coords.centerIm !== coords.centerIm ||
-            coordsHistory[0].coords.dRe !== coords.dRe
+            coordsHistory[coordsHistory.length - 1].coords.centerRe !== coords.centerRe ||
+            coordsHistory[coordsHistory.length - 1].coords.centerIm !== coords.centerIm ||
+            coordsHistory[coordsHistory.length - 1].coords.dRe !== coords.dRe
         ) {
             coordsHistory = [...coordsHistory, {coords, date: new Date()}];
         }
         isBusy = true;
         drawFractal({
-            type: FractalType.Mandelbrot,
+            type,
             coords,
             xPixels: w,
             yPixels: h,
@@ -94,6 +96,7 @@
         orbitalCanvas.height = h;
         orbitalCtx = orbitalCanvas.getContext('2d');
         orbitalCtx.clearRect(0, 0, w, h);
+        isOrbitalCanvasInitialized = true;
     }
 
     // ToDo: canvas size options (aspect ratio with native resolution, 1920*1080, ...)
@@ -244,13 +247,14 @@
         {/if}
     </div>
     <div id="info">
+        <Select label="Type" options={fractalTypeOptions} bind:value={type} disabled={isOrbital || zoomBox} />
+        <br />
         <CoordInput bind:value={coords} />
         <br />
         <div class="value-container">
             <div>Magnification</div>
             <div>{3.0769 / coords.dRe}</div>
         </div>
-        <br />
         <div class="value-container">
             <div>Width</div>
             <div>{w}</div>
@@ -262,8 +266,16 @@
         <br />
         <NumberInput label="Max. Iterations" bind:value={maxIter} min="30" max="999999" />
         <NumberInput label="Web Workers" bind:value={workerCount} min="1" max="8" />
-        <ColorSchemeInput bind:value={colorOptions.scheme} />
-        <NumberInput label="Color Cycles" bind:value={colorOptions.cycles} min="1" max="100" />
+        <Select
+            label="Color Scheme"
+            bind:value={colorOptions.scheme}
+            options={Object.keys(colorSchemes).map(o => ({name: o, value: o}))}
+        />
+        {#if type === FractalType.Mandelbrot || type === FractalType.Julia}
+            <NumberInput label="Color Cycles" bind:value={colorOptions.cycles} min="1" max="100" />
+        {:else}
+            <NumberInput label="Distance Limit" bind:value={colorOptions.distLimit} />
+        {/if}
         <div
             class="value-container"
             on:click={() => {

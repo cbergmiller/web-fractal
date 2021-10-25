@@ -2,7 +2,7 @@ import {color} from 'd3-color';
 import {scaleSequential} from 'd3-scale';
 import * as scales from 'd3-scale-chromatic';
 import WebWorker from 'web-worker:./worker.ts';
-import type {Coordinates} from './models';
+import {Coordinates, SelectOption, FractalType, ColorOptions} from './models';
 
 // See: https://github.com/d3/d3-scale-chromatic
 export const colorSchemes = {
@@ -13,18 +13,27 @@ export const colorSchemes = {
     plasma: scales.interpolatePlasma,
     cividis: scales.interpolateCividis,
     cubehelix: scales.interpolateCubehelixDefault,
+    grey: scales.interpolateGreys,
 };
 
-export interface ColorOptions {
-    scheme: string;
-    cycles: number;
-    reversed: boolean;
-}
-
-export enum FractalType {
-    Mandelbrot,
-    Julia,
-}
+export const fractalTypeOptions: SelectOption[] = [
+    {
+        name: 'Mandelbrot',
+        value: FractalType.Mandelbrot,
+    },
+    {
+        name: 'Mandelbrot Distance Estimation',
+        value: FractalType.MandelbrotDEM,
+    },
+    /*{
+        name: 'Julia',
+        value: FractalType.Julia,
+    },
+    {
+        name: 'Julia Distance Estimation',
+        value: FractalType.JuliaDEM,
+    },*/
+];
 
 interface FractalOptions {
     type: FractalType;
@@ -53,6 +62,32 @@ function initWorkers(count: number, handleResult: (e: MessageEvent) => void) {
     }
 }
 
+function initIterativeColor(colorOptions: ColorOptions, maxIter: number) {
+    const maxColorIter = Math.ceil(maxIter / colorOptions.cycles);
+    const scale = scaleSequential(colorSchemes[colorOptions.scheme]).domain(
+        colorOptions.reversed ? [maxColorIter, 0] : [0, maxColorIter]
+    );
+    // Calc color map
+    const colorMap = [];
+    for (let i = 0; i < maxColorIter; i++) {
+        colorMap.push(color(scale(i)));
+    }
+    colorMap.push(color('rgba(0, 0, 0, 255)'));
+    // ToDo: measure impact of use of function call for every pixel
+    return function (n: number) {
+        return colorMap[n === maxIter ? maxColorIter : n % maxColorIter];
+    };
+}
+
+function initDistanceColor(colorOptions: ColorOptions) {
+    const scale = scaleSequential(colorSchemes[colorOptions.scheme])
+        .domain(colorOptions.reversed ? [colorOptions.distLimit, 0] : [0, colorOptions.distLimit])
+        .clamp(true);
+    return function (n) {
+        return color(scale(n)) ?? color('rgba(0, 0, 0, 255)');
+    };
+}
+
 export function drawFractal(options: FractalOptions): Promise<boolean> {
     const {coords, xPixels, yPixels, maxIter, colorOptions, workerCount, plotLines} = options;
     const dIm = (coords.dRe * yPixels) / xPixels;
@@ -61,18 +96,12 @@ export function drawFractal(options: FractalOptions): Promise<boolean> {
     const imMin = coords.centerIm - dIm / 2;
     const imMax = coords.centerIm + dIm / 2;
 
-    const maxColorIter = Math.ceil(maxIter / colorOptions.cycles);
     return new Promise(resolve => {
-        const scale = scaleSequential(colorSchemes[colorOptions.scheme]).domain(
-            colorOptions.reversed ? [maxColorIter, 0] : [0, maxColorIter]
-        );
-        // Calc color map
-        const colorMap = [];
-        for (let i = 0; i < maxColorIter; i++) {
-            colorMap.push(color(scale(i)));
-        }
-        colorMap.push(color('rgba(0, 0, 0, 255)'));
-
+        // ToDo: move coloring into worker
+        const colorFn =
+            options.type === FractalType.Mandelbrot || options.type === FractalType.Julia
+                ? initIterativeColor(colorOptions, maxIter)
+                : initDistanceColor(colorOptions);
         const linesPerBatch = 20;
         let nResults = Math.ceil(yPixels / linesPerBatch);
 
@@ -83,7 +112,7 @@ export function drawFractal(options: FractalOptions): Promise<boolean> {
             for (let i = 0; i < rows.length; i++) {
                 for (let x = 0; x < rows[i].length; x++) {
                     const n = rows[i][x];
-                    const color = n === maxIter ? colorMap[maxColorIter] : colorMap[n % maxColorIter];
+                    const color = colorFn(n);
                     data.push(color);
                 }
             }
@@ -96,6 +125,7 @@ export function drawFractal(options: FractalOptions): Promise<boolean> {
 
         for (let y = 0; y < yPixels; y += linesPerBatch) {
             workers[(y / linesPerBatch) % workerCount].postMessage({
+                type: options.type,
                 y,
                 xPixels,
                 yPixels,
@@ -144,7 +174,7 @@ export function drawOrbit(options: FractalOrbitOptions) {
         yPixels,
         coords,
         maxIter,
-    })
+    });
 }
 
 /*
