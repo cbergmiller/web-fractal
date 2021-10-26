@@ -7,6 +7,7 @@
     import {ColorOptions, FractalType, Coordinates, CoordsHistoryItem} from './models';
     import {colorSchemes, drawFractal, drawOrbit, fractalTypeOptions, pixelToComplex} from './fractal';
 
+    const dpr = window.devicePixelRatio || 1;
     let w = 1;
     let h = 1;
     let ctx: CanvasRenderingContext2D;
@@ -80,7 +81,6 @@
     }
 
     onMount(() => {
-        const dpr = window.devicePixelRatio || 1;
         canvas.width = canvasW * dpr;
         canvas.height = canvasH * dpr;
         w = Math.floor(canvasW * dpr);
@@ -101,7 +101,7 @@
 
     // ToDo: canvas size options (aspect ratio with native resolution, 1920*1080, ...)
     // ToDo: save/load settings
-    // ToDo: Distance estimation method
+    // ToDo: Settings for inside color
     // ToDo: Julia
 
     function initZoom() {
@@ -182,6 +182,7 @@
         if (!isOrbitalCanvasInitialized) {
             initOrbitalCanvas();
         }
+        const size = dpr * 2;
         drawOrbit({
             type: FractalType.Mandelbrot,
             coords: {
@@ -198,7 +199,7 @@
                 orbitalCtx.fillStyle = 'white';
                 // draw points on canvas
                 for (let i = 0; i < data.length; i += 2) {
-                    orbitalCtx.fillRect(data[i], data[i + 1], 4, 4);
+                    orbitalCtx.fillRect(data[i], data[i + 1], size, size);
                 }
             },
         });

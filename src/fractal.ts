@@ -79,12 +79,16 @@ function initIterativeColor(colorOptions: ColorOptions, maxIter: number) {
     };
 }
 
+/**
+ *
+ */
 function initDistanceColor(colorOptions: ColorOptions) {
     const scale = scaleSequential(colorSchemes[colorOptions.scheme])
         .domain(colorOptions.reversed ? [colorOptions.distLimit, 0] : [0, colorOptions.distLimit])
         .clamp(true);
     return function (n) {
-        return color(scale(n)) ?? color('rgba(0, 0, 0, 255)');
+        if (!n) return color('rgba(0, 0, 0, 255)')
+        return color(scale(n));
     };
 }
 
