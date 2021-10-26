@@ -38,7 +38,7 @@
     $: zoomCoords = zoomBox ? pixelToComplex(zoomBox.centerX, zoomBox.centerY, w, h, coords) : null;
     let isOrbital = false;
 
-    function plotLines(yStart, data) {
+    function plotLines(yStart, data, xPixels) {
         const sh = data.length / w;
         const image = ctx.getImageData(0, yStart, w, sh);
         for (let i = 0; i < data.length; i++) {
@@ -80,16 +80,28 @@
             });
     }
 
-    onMount(() => {
-        canvas.width = canvasW * dpr;
-        canvas.height = canvasH * dpr;
-        w = Math.floor(canvasW * dpr);
-        h = Math.floor(canvasH * dpr);
-        // console.log(dpr, canvas.width, canvas.height, canvasW, canvasH);
-        ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, w, h);
-        renderFractal();
-    });
+    $: {
+        console.log(canvasW, canvasH);
+    }
+
+    $: {
+        if (canvas && canvasW && canvasH) {
+            if (ctx) {
+                ctx.clearRect(0, 0, w, h);
+            }
+            // Initialize canvas on mount and when it is resized
+            canvas.width = canvasW * dpr;
+            canvas.height = canvasH * dpr;
+            w = Math.floor(canvasW * dpr);
+            h = Math.floor(canvasH * dpr);
+            console.log(dpr, canvas.width, canvas.height, canvasW, canvasH);
+            if (!ctx) {
+                ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, w, h);
+            }
+            renderFractal();
+        }
+    }
 
     function initOrbitalCanvas() {
         orbitalCanvas.width = w;
@@ -182,7 +194,7 @@
         if (!isOrbitalCanvasInitialized) {
             initOrbitalCanvas();
         }
-        const size = dpr * 2;
+        const size = Math.floor(dpr) * 2;
         drawOrbit({
             type: FractalType.Mandelbrot,
             coords: {
@@ -207,13 +219,8 @@
 </script>
 
 <div class="layout">
-    <div id="fractal">
-        <canvas
-            bind:this={canvas}
-            bind:clientWidth={canvasW}
-            bind:clientHeight={canvasH}
-            class={isOrbital ? 'opacity05' : ''}
-        />
+    <div id="fractal" bind:clientWidth={canvasW} bind:clientHeight={canvasH}>
+        <canvas bind:this={canvas} class={isOrbital ? 'opacity05' : ''} />
         {#if zoomBox}
             <svg
                 viewBox="0 0 {w} {h}"

@@ -87,7 +87,7 @@ function initDistanceColor(colorOptions: ColorOptions) {
         .domain(colorOptions.reversed ? [colorOptions.distLimit, 0] : [0, colorOptions.distLimit])
         .clamp(true);
     return function (n) {
-        if (!n) return color('rgba(0, 0, 0, 255)')
+        if (!n) return color('rgba(0, 0, 0, 255)');
         return color(scale(n));
     };
 }
@@ -108,21 +108,17 @@ export function drawFractal(options: FractalOptions): Promise<boolean> {
                 : initDistanceColor(colorOptions);
         const linesPerBatch = 20;
         let nResults = Math.ceil(yPixels / linesPerBatch);
-
+        console.time();
         initWorkers(workerCount, function (e) {
-            // Plot one row
-            const {y, rows} = e.data;
-            const data = [];
-            for (let i = 0; i < rows.length; i++) {
-                for (let x = 0; x < rows[i].length; x++) {
-                    const n = rows[i][x];
-                    const color = colorFn(n);
-                    data.push(color);
-                }
+            // Plot the rows
+            const {y, arr} = e.data;
+            for (let i = 0; i < arr.length; i++) {
+                arr[i] = colorFn(arr[i]);
             }
-            plotLines(y, data);
+            plotLines(y, arr);
             nResults -= 1;
             if (!nResults) {
+                console.timeEnd();
                 resolve(true);
             }
         });

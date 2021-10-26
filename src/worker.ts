@@ -94,21 +94,20 @@ self.addEventListener('message', function (e) {
         postMessage(arr);
     } else {
         const {y, xPixels, yPixels, reMin, reMax, imMin, imMax, maxIter, count, juliaCoords} = e.data;
-        const rows = [];
+        const arr = [];
         for (let y2 = y; y2 < Math.min(y + count, yPixels); y2++) {
-            const line = [];
             const cIm = imMin + ((imMax - imMin) * y2) / yPixels;
             for (let x = 0; x < xPixels; x++) {
                 const cRe = reMin + ((reMax - reMin) * x) / xPixels;
                 // ToDo: move condition outside of loop (measure impact? JIT may already optimize this?)
+                // const n = julia(cRe, cIm, cRe, cIm, maxIter)
                 const n =
                     e.data.type === FractalType.Mandelbrot
-                        ? julia(cRe, cIm, juliaCoords?.centerRe ?? cRe, juliaCoords?.centerIm ?? cIm, maxIter)
+                        ? julia(cRe, cIm, cRe, cIm, maxIter)
                         : mandelDistance(cRe, cIm, maxIter, reMax - reMin);
-                line.push(n);
+                arr.push(n);
             }
-            rows.push(line);
         }
-        postMessage({y, rows});
+        postMessage({y, arr});
     }
 });
