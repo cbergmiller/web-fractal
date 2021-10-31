@@ -93,19 +93,43 @@ self.addEventListener('message', function (e) {
         }
         postMessage(arr);
     } else {
-        const {y, xPixels, yPixels, reMin, reMax, imMin, imMax, maxIter, count, juliaCoords} = e.data;
+        const {y, xPixels, yPixels, reMin, reMax, imMin, imMax, maxIter, count, juliaRe, juliaIm} = e.data;
+        const dRe = reMax - reMin;
+        const xScale = dRe / xPixels;
+        const yScale =  (imMax - imMin) / yPixels;
+        const yEnd = Math.min(y + count, yPixels)
         const arr = [];
-        for (let y2 = y; y2 < Math.min(y + count, yPixels); y2++) {
-            const cIm = imMin + ((imMax - imMin) * y2) / yPixels;
-            for (let x = 0; x < xPixels; x++) {
-                const cRe = reMin + ((reMax - reMin) * x) / xPixels;
-                // ToDo: move condition outside of loop (measure impact? JIT may already optimize this?)
-                // const n = julia(cRe, cIm, cRe, cIm, maxIter)
-                const n =
-                    e.data.type === FractalType.Mandelbrot
-                        ? julia(cRe, cIm, cRe, cIm, maxIter)
-                        : mandelDistance(cRe, cIm, maxIter, reMax - reMin);
-                arr.push(n);
+        if (e.data.type === FractalType.Mandelbrot) {
+            for (let y2 = y; y2 < yEnd; y2++) {
+                const cIm = imMin + yScale * y2;
+                for (let x = 0; x < xPixels; x++) {
+                    const cRe = reMin + xScale * x;
+                    arr.push(julia(cRe, cIm, cRe, cIm, maxIter));
+                }
+            }
+        } else if (e.data.type === FractalType.MandelbrotDEM) {
+            for (let y2 = y; y2 < yEnd; y2++) {
+                const cIm = imMin + yScale * y2;
+                for (let x = 0; x < xPixels; x++) {
+                    const cRe = reMin + xScale * x;
+                    arr.push(mandelDistance(cRe, cIm, maxIter, dRe));
+                }
+            }
+        } else if (e.data.type === FractalType.Julia) {
+            for (let y2 = y; y2 < yEnd; y2++) {
+                const cIm = imMin + yScale * y2;
+                for (let x = 0; x < xPixels; x++) {
+                    const cRe = reMin + xScale * x;
+                    arr.push(julia(cRe, cIm, juliaRe, juliaIm, maxIter));
+                }
+            }
+        } else {
+            for (let y2 = y; y2 < yEnd; y2++) {
+                const cIm = imMin + yScale * y2;
+                for (let x = 0; x < xPixels; x++) {
+                    const cRe = reMin + xScale * x;
+                    arr.push(mandelDistance(cRe, cIm, maxIter, dRe));
+                }
             }
         }
         postMessage({y, arr});

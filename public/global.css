@@ -1,6 +1,7 @@
 body {
     color: gray;
-    font-family: monospace;
+    font-family: 'Roboto Mono', 'Consolas', monospace;
+    font-size: 0.9em;
     background-color: black;
 }
 
@@ -39,6 +40,7 @@ a {
     color: lightgray;
     grid-column: 2;
     grid-row: 1;
+    margin-top: 0.4em;
 }
 
 #info > button {

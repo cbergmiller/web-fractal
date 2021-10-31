@@ -5,21 +5,22 @@
     export let max = undefined;
     let isForm = false;
     let formValue = 0;
+    let lastBlur = null;
 
     function handleChange() {
-        console.log('blur')
         isForm = false;
         if (!isNaN(formValue) && formValue !== null) {
             value = formValue;
         }
+        lastBlur = Date.now().valueOf();
     }
 </script>
 
 <div
     class="value-container"
     on:click={() => {
-        console.log(isForm)
         if (!isForm) {
+            if (lastBlur && (Date.now().valueOf() - lastBlur) < 400) return;
             formValue = value;
             isForm = true;
         }

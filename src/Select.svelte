@@ -6,6 +6,7 @@
     export let disabled = false;
     let isForm = false;
     let formValue;
+    let lastBlur = null;
 
     function handleChange() {
         if (disabled) return;
@@ -18,6 +19,7 @@
     class="value-container"
     on:click={() => {
         if (disabled) return;
+        if (lastBlur && (Date.now().valueOf() - lastBlur) < 400) return;
         formValue = value;
         isForm = true;
     }}
@@ -30,6 +32,7 @@
                 on:change={handleChange}
                 on:blur={() => {
                     isForm = false;
+                    lastBlur = Date.now().valueOf();
                 }}
             >
                 {#each options as option}<option value={option.value}>{option.name}</option>{/each}

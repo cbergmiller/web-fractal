@@ -25,19 +25,20 @@ export const fractalTypeOptions: SelectOption[] = [
         name: 'Mandelbrot Distance Estimation',
         value: FractalType.MandelbrotDEM,
     },
-    /*{
+    {
         name: 'Julia',
         value: FractalType.Julia,
     },
     {
         name: 'Julia Distance Estimation',
         value: FractalType.JuliaDEM,
-    },*/
+    },
 ];
 
 interface FractalOptions {
     type: FractalType;
     coords: Coordinates;
+    juliaCoords: Coordinates;
     xPixels: number;
     yPixels: number;
     maxIter: number;
@@ -93,7 +94,7 @@ function initDistanceColor(colorOptions: ColorOptions) {
 }
 
 export function drawFractal(options: FractalOptions): Promise<boolean> {
-    const {coords, xPixels, yPixels, maxIter, colorOptions, workerCount, plotLines} = options;
+    const {coords, xPixels, yPixels, maxIter, colorOptions, workerCount, plotLines, juliaCoords} = options;
     const dIm = (coords.dRe * yPixels) / xPixels;
     const reMin = coords.centerRe - coords.dRe / 2;
     const reMax = coords.centerRe + coords.dRe / 2;
@@ -133,6 +134,8 @@ export function drawFractal(options: FractalOptions): Promise<boolean> {
                 reMax,
                 imMin,
                 imMax,
+                juliaRe: juliaCoords.centerRe,
+                juliaIm: juliaCoords.centerIm,
                 maxIter,
                 count: linesPerBatch,
             });

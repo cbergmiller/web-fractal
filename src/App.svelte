@@ -1,5 +1,4 @@
 <script lang="ts">
-    import {onMount} from 'svelte';
     import NumberInput from './Number-input.svelte';
     import CoordInput from './Coords-input.svelte';
     import Select from './Select.svelte';
@@ -20,9 +19,14 @@
     let type = FractalType.Mandelbrot;
     // Init plane
     let coords: Coordinates = {
-        centerRe: -0.7,
+        centerRe: 0, //-0.7,
         centerIm: 0,
         dRe: 3.0769,
+    };
+    let juliaCoords: Coordinates = {
+        centerRe: -0.122561,
+        centerIm: 0.744862,
+        dRe: 0,
     };
     let coordsHistory: CoordsHistoryItem[] = [];
     let maxIter = 150;
@@ -38,7 +42,7 @@
     $: zoomCoords = zoomBox ? pixelToComplex(zoomBox.centerX, zoomBox.centerY, w, h, coords) : null;
     let isOrbital = false;
 
-    function plotLines(yStart, data, xPixels) {
+    function plotLines(yStart, data) {
         const sh = data.length / w;
         const image = ctx.getImageData(0, yStart, w, sh);
         for (let i = 0; i < data.length; i++) {
@@ -64,6 +68,7 @@
         drawFractal({
             type,
             coords,
+            juliaCoords,
             xPixels: w,
             yPixels: h,
             maxIter,
@@ -80,26 +85,27 @@
             });
     }
 
-    $: {
-        console.log(canvasW, canvasH);
+    function initCanvas() {
+        if (isBusy) return;
+        if (ctx) {
+            ctx.clearRect(0, 0, w, h);
+        }
+        // Initialize canvas on mount and when it is resized
+        canvas.width = canvasW * dpr;
+        canvas.height = canvasH * dpr;
+        w = Math.floor(canvasW * dpr);
+        h = Math.floor(canvasH * dpr);
+        console.log(dpr, canvas.width, canvas.height, canvasW, canvasH);
+        if (!ctx) {
+            ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, w, h);
+        }
+        renderFractal();
     }
 
     $: {
-        if (canvas && canvasW && canvasH) {
-            if (ctx) {
-                ctx.clearRect(0, 0, w, h);
-            }
-            // Initialize canvas on mount and when it is resized
-            canvas.width = canvasW * dpr;
-            canvas.height = canvasH * dpr;
-            w = Math.floor(canvasW * dpr);
-            h = Math.floor(canvasH * dpr);
-            console.log(dpr, canvas.width, canvas.height, canvasW, canvasH);
-            if (!ctx) {
-                ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, w, h);
-            }
-            renderFractal();
+        if (canvas && canvasW) {
+            initCanvas();
         }
     }
 
