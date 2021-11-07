@@ -7,6 +7,7 @@ export interface Coordinates {
 export interface CoordsHistoryItem {
     coords: Coordinates;
     date: Date;
+    type: FractalType;
 }
 
 export interface SelectOption {
@@ -26,4 +27,21 @@ export enum FractalType {
     MandelbrotDEM,
     Julia,
     JuliaDEM,
+}
+
+const baseTypes = {
+    [FractalType.Mandelbrot]: FractalType.Mandelbrot,
+    [FractalType.MandelbrotDEM]: FractalType.Mandelbrot,
+    [FractalType.Julia]: FractalType.Julia,
+    [FractalType.JuliaDEM]: FractalType.JuliaDEM,
+}
+
+export function getBaseType(type: FractalType): FractalType {
+    return baseTypes[type];
+}
+
+export const aspectRatioClassNames = {
+    '4:3': 'a4-3',
+    '16:10': 'a16-10',
+    '16:9': 'a16-9',
 }

@@ -20,18 +20,26 @@
     class="value-container"
     on:click={() => {
         if (!isForm) {
-            if (lastBlur && (Date.now().valueOf() - lastBlur) < 400) return;
+            if (lastBlur && Date.now().valueOf() - lastBlur < 400) return;
             formValue = value;
             isForm = true;
         }
     }}
 >
-    <div>{label}</div>
-    <div>
-        {#if isForm}
-            <input type="number" {min} {max} bind:value={formValue} on:blur={handleChange} />
-        {:else}
-            {value}
-        {/if}
-    </div>
+    {#if isForm}
+        <label for={label}>{label}</label>
+        <input
+            id={label}
+            name={label}
+            type="number"
+            {min}
+            {max}
+            bind:value={formValue}
+            on:blur={handleChange}
+            autofocus
+        />
+    {:else}
+        <div>{label}</div>
+        <div>{value}</div>
+    {/if}
 </div>

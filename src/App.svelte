@@ -1,10 +1,19 @@
 <script lang="ts">
+    import classNames from 'classnames';
     import NumberInput from './Number-input.svelte';
     import CoordInput from './Coords-input.svelte';
     import Select from './Select.svelte';
     import CoordsHistory from './Coords-history.svelte';
-    import {ColorOptions, FractalType, Coordinates, CoordsHistoryItem} from './models';
+    import {
+        ColorOptions,
+        Coordinates,
+        CoordsHistoryItem,
+        FractalType,
+        getBaseType,
+        aspectRatioClassNames,
+    } from './models';
     import {colorSchemes, drawFractal, drawOrbit, fractalTypeOptions, pixelToComplex} from './fractal';
+    import {tail} from './utils';
 
     const dpr = window.devicePixelRatio || 1;
     let w = 1;
@@ -17,9 +26,10 @@
     let canvasH;
     let isOrbitalCanvasInitialized = false;
     let type = FractalType.Mandelbrot;
+    let size = '16:10';
     // Init plane
     let coords: Coordinates = {
-        centerRe: 0, //-0.7,
+        centerRe: -0.7,
         centerIm: 0,
         dRe: 3.0769,
     };
@@ -32,7 +42,7 @@
     let maxIter = 150;
     let colorOptions: ColorOptions = {
         scheme: 'cividis',
-        cycles: 1,
+        cycles: 4,
         reversed: false,
         distLimit: 0.002,
     };
@@ -55,14 +65,21 @@
         ctx.putImageData(image, 0, yStart);
     }
 
+    function filterCoordsHistory(t: FractalType) {
+        return coordsHistory.filter(item => getBaseType(item.type) === getBaseType(t));
+    }
+
     function renderFractal() {
+        // Update the coordinates history if the coordinates have changed
+        const filtered = filterCoordsHistory(type);
+        const lastItem = tail(filtered);
         if (
-            !coordsHistory.length ||
-            coordsHistory[coordsHistory.length - 1].coords.centerRe !== coords.centerRe ||
-            coordsHistory[coordsHistory.length - 1].coords.centerIm !== coords.centerIm ||
-            coordsHistory[coordsHistory.length - 1].coords.dRe !== coords.dRe
+            !lastItem ||
+            lastItem.coords.centerRe !== coords.centerRe ||
+            lastItem.coords.centerIm !== coords.centerIm ||
+            lastItem.coords.dRe !== coords.dRe
         ) {
-            coordsHistory = [...coordsHistory, {coords, date: new Date()}];
+            coordsHistory = [...coordsHistory, {coords, date: new Date(), type: type}];
         }
         isBusy = true;
         drawFractal({
@@ -104,7 +121,7 @@
     }
 
     $: {
-        if (canvas && canvasW) {
+        if (canvas && canvasW && canvasH) {
             initCanvas();
         }
     }
@@ -117,10 +134,10 @@
         isOrbitalCanvasInitialized = true;
     }
 
-    // ToDo: canvas size options (aspect ratio with native resolution, 1920*1080, ...)
+    // ToDo: canvas full screen options
     // ToDo: save/load settings
     // ToDo: Settings for inside color
-    // ToDo: Julia
+    // ToDo: Julia distance estimation
 
     function initZoom() {
         if (!zoomBox) {
@@ -222,11 +239,40 @@
             },
         });
     }
+
+    function handleTypeChange(newType: FractalType, prevType: FractalType) {
+        const newBaseType = getBaseType(newType);
+        const filtered = filterCoordsHistory(type);
+        if (newBaseType != getBaseType(prevType)) {
+            if (newBaseType === FractalType.Julia) {
+                // Fractal type was changed to Julia
+                // Update Julia c-value from Mandelbrot coordinates
+                juliaCoords = coords;
+            }
+            // Set coords to last history item or to default
+            if (filtered.length) {
+                coords = tail(filtered).coords;
+            } else {
+                coords =
+                    newBaseType === FractalType.Julia
+                        ? {
+                              centerRe: 0,
+                              centerIm: 0,
+                              dRe: 3.0769,
+                          }
+                        : {
+                              centerRe: -0.7,
+                              centerIm: 0,
+                              dRe: 3.0769,
+                          };
+            }
+        }
+    }
 </script>
 
 <div class="layout">
     <div id="fractal" bind:clientWidth={canvasW} bind:clientHeight={canvasH}>
-        <canvas bind:this={canvas} class={isOrbital ? 'opacity05' : ''} />
+        <canvas bind:this={canvas} class={classNames(aspectRatioClassNames[size], {opacity05: isOrbital})} />
         {#if zoomBox}
             <svg
                 viewBox="0 0 {w} {h}"
@@ -261,14 +307,22 @@
         {/if}
     </div>
     <div id="info">
-        <Select label="Type" options={fractalTypeOptions} bind:value={type} disabled={isOrbital || zoomBox} />
-        <br />
-        <CoordInput bind:value={coords} />
-        <br />
-        <div class="value-container">
-            <div>Magnification</div>
-            <div>{3.0769 / coords.dRe}</div>
-        </div>
+        <Select
+            label="Type"
+            options={fractalTypeOptions}
+            bind:value={type}
+            disabled={isOrbital || zoomBox}
+            onChange={handleTypeChange}
+        />
+        <Select
+            label="Size"
+            bind:value={size}
+            options={[
+                {name: '4:3', value: '4:3'},
+                {name: '16:10', value: '16:10'},
+                {name: '16:9', value: '16:9'},
+            ]}
+        />
         <div class="value-container">
             <div>Width</div>
             <div>{w}</div>
@@ -278,17 +332,23 @@
             <div>{h}</div>
         </div>
         <br />
-        <NumberInput label="Max. Iterations" bind:value={maxIter} min="30" max="999999" />
-        <NumberInput label="Web Workers" bind:value={workerCount} min="1" max="8" />
+        <CoordInput bind:value={coords} />
+        <br />
+        {#if getBaseType(type) === FractalType.Julia}
+            <CoordInput bind:value={juliaCoords} isParamC />
+            <br />
+        {/if}
+        <NumberInput label="Max. iterations" bind:value={maxIter} min="30" max="999999" />
+        <NumberInput label="Web workers" bind:value={workerCount} min="1" max="8" />
         <Select
-            label="Color Scheme"
+            label="Color scheme"
             bind:value={colorOptions.scheme}
             options={Object.keys(colorSchemes).map(o => ({name: o, value: o}))}
         />
         {#if type === FractalType.Mandelbrot || type === FractalType.Julia}
-            <NumberInput label="Color Cycles" bind:value={colorOptions.cycles} min="1" max="100" />
+            <NumberInput label="Color cycles" bind:value={colorOptions.cycles} min="1" max="100" />
         {:else}
-            <NumberInput label="Distance Limit" bind:value={colorOptions.distLimit} />
+            <NumberInput label="Distance limit" bind:value={colorOptions.distLimit} />
         {/if}
         <div
             class="value-container"
@@ -296,7 +356,7 @@
                 colorOptions = {...colorOptions, reversed: !colorOptions.reversed};
             }}
         >
-            <div>Reversed Colors</div>
+            <div>Reversed colors</div>
             <div>{colorOptions.reversed ? 'yes' : 'no'}</div>
         </div>
         <button on:click={renderFractal} disabled={isBusy}>{isBusy ? 'Working..' : 'Redraw'}</button>
@@ -304,9 +364,9 @@
         {#if zoomBox}
             <br />
             Zoom {zoomBox.zoom}<br />
-            Center Real {zoomCoords[0]}<br />
-            Center Imag {zoomCoords[1]}i<br />
-            Diameter Real {coords.dRe * zoomBox.zoom}<br />
+            Center real {zoomCoords[0]}<br />
+            Center imag {zoomCoords[1]}i<br />
+            Diameter real {coords.dRe * zoomBox.zoom}<br />
             <p>
                 Press SPACE or ENTER to redraw with zoom, + or - to change box size, "z" or "ESC" to end zoom mode. Move
                 the box with arrow keys or the mouse.
@@ -319,9 +379,9 @@
                 Press "o" to activate orbital mode.
             </p>
         {/if}
-        Coordinates History
+        Coordinates history
         <CoordsHistory
-            items={coordsHistory}
+            items={filterCoordsHistory(type)}
             onSelect={newCoords => {
                 coords = newCoords;
                 renderFractal();
